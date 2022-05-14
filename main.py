@@ -27,7 +27,6 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 ##Call support file##
 #####################
 from gizmo_connect import booking, booking_delite, get_booking, get_hosts, get_users
-from config import is_admin
 import keyboard
 from simple_calendar import calendar_callback, SimpleCalendar
 
@@ -47,11 +46,11 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
  #booking(60, 1)
- #get_hosts()
+ get_hosts()
  #get_booking()
  #mess = booking_delite(5)
  #get_users(1, 'use')
- await message.answer ('Дата', reply_markup=await SimpleCalendar().start_calendar())
+ #await message.answer ('Дата', reply_markup=await SimpleCalendar().start_calendar())
 
 @dp.callback_query_handler(calendar_callback.filter())
 async def process_simple_calendar(callback_query: types.CallbackQuery, callback_data: dict):
