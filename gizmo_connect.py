@@ -1,9 +1,15 @@
 import requests
+import random
+import string
 import json
 from config import gizmo_token, server
 from pprint import pprint
 
+
 auth = ('admin', 'admin')
+def generate_random_string(length = 6):
+    letters = string.ascii_uppercase
+    rand_string = ''.join(random.choice(letters) for i in range(length))
 
 def get_hosts():
     r = requests.get(f'http://{server}/api/v2.0/hosts', auth=auth)
@@ -12,15 +18,15 @@ def get_hosts():
 def booking(time, host_id, date, phone = 0, note = '', email = 'user@example.com'):
     data = {
     "date": f"{date}",
-    "duration": f'{time}',
-    "contactPhone": f'{phone}',
-    "contactEmail": f'{email}',
+    "duration": f"{time}",
+    "contactPhone": f"{phone}",
+    "contactEmail": f"{email}",
     "note": f"{note}",
-    "pin": "randos",
+    "pin": f"{generate_random_string()}",
     "status": 0,
     "hosts": [
       {
-        "hostId": f'{host_id}'
+        "hostId": f"{host_id}"
       }
     ]
   }
