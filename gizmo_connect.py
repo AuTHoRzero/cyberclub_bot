@@ -10,15 +10,17 @@ auth = ('admin', 'admin')
 def generate_random_string(length = 6):
     letters = string.ascii_uppercase
     rand_string = ''.join(random.choice(letters) for i in range(length))
+    return rand_string
 
 def get_hosts():
     r = requests.get(f'http://{server}/api/v2.0/hosts', auth=auth)
     pprint(r.json())
 
-def booking(time, host_id, date, phone = 0, note = '', email = 'user@example.com'):
+def booking( date, duration, host_id, phone = 0, note = 'Telegram bot booking', email = 'user@example.com'):
+#    print(date)
     data = {
-    "date": f"{date}",
-    "duration": f"{time}",
+    "date": f"2022-05-16T18:24:25.439Z",
+    "duration": f"{duration}",
     "contactPhone": f"{phone}",
     "contactEmail": f"{email}",
     "note": f"{note}",
@@ -32,6 +34,7 @@ def booking(time, host_id, date, phone = 0, note = '', email = 'user@example.com
   }
   
     r = requests.post(f'http://{server}/api/v2.0/reservations', auth = auth, json=data )
+    pprint(r.json())
     if r.status_code == 200:
         return 'Бронирование завершено'
     else:
