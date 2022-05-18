@@ -5,14 +5,17 @@ from aiogram.utils.callback_data import CallbackData
 
 time_callback = CallbackData('time_call', 'name', 'time')
 duration_callback = CallbackData('duration_call', 'name', 'duration')
+host_callback = CallbackData('host_call', 'name', 'host_id')
 
 #####################
 ##Main munu buttons##
 #####################
 
+my_booking = KeyboardButton('Мои бронирования')
+my_booking_btn = ReplyKeyboardMarkup(resize_keyboard=True).add(my_booking)
 
-
-
+reg_button = KeyboardButton(text="Share your phone number", request_contact=True)
+reg_keyboard = ReplyKeyboardMarkup(resize_keyboard=True).add(reg_button)
 
 
 def gen_hour_keyboard():
@@ -27,4 +30,11 @@ def gen_duration_keyboard():
     markup.row()
     for duration in range (1, 25, 1):
         markup.insert(InlineKeyboardButton(duration, callback_data=duration_callback.new('DURATION', duration)))
+    return markup
+
+def gen_hosts_keyboard():
+    markup = InlineKeyboardMarkup(row_width=4)
+    markup.row()
+    for host in range (1, 5, 1):
+        markup.insert(InlineKeyboardButton(host, callback_data=host_callback.new('HOST', host)))
     return markup

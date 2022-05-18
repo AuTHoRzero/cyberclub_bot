@@ -16,19 +16,20 @@ def get_hosts():
     r = requests.get(f'http://{server}/api/v2.0/hosts', auth=auth)
     pprint(r.json())
 
-def booking( date, duration, host_id, phone = 0, note = 'Telegram bot booking', email = 'user@example.com'):
+def booking( user_id, date, duration, host_id, phone = '0', note = 'Telegram bot booking', email = 'user@example.com'):
 #    print(date)
     data = {
-    "date": f"2022-05-16T18:24:25.439Z",
-    "duration": f"{duration}",
+    "id": f'{user_id}',
+    "date": f"{str(date)}",
+    "duration": int(duration),
     "contactPhone": f"{phone}",
     "contactEmail": f"{email}",
     "note": f"{note}",
-    "pin": f"{generate_random_string()}",
+    "pin": f"{str(generate_random_string())}",
     "status": 0,
     "hosts": [
       {
-        "hostId": f"{host_id}"
+        "hostId": f"{str(host_id)}"
       }
     ]
   }
@@ -40,8 +41,8 @@ def booking( date, duration, host_id, phone = 0, note = 'Telegram bot booking', 
     else:
         return 'Ошибка бронирования'
 
-def get_booking():
-    r = requests.get(f'http://{server}/api/v2.0/reservations', auth=auth)
+def get_booking(user_id):
+    r = requests.get(f'http://{server}/api/v2.0/reservations?UserId={user_id}', auth=auth)
     pprint(r.json())
     if r.status_code == 200:
         return r.json()
@@ -65,3 +66,23 @@ def get_users(is_search, username = ''):
         for data in users_data['result']['data']:
             pprint(data['username'])
 #        pprint(r.json())
+
+def create_user(username, firstname, lastname, mobiePhone, password, email = "Не указан"):
+    user_data = {
+  "username": f"{username}",
+  "email": f"{email}",
+  "userGroupId": 1,
+  "isNegativeBalanceAllowed": "false",
+  "isPersonalInfoRequested": "false",
+  "firstName": f"{firstname}",
+  "lastName": f"{lastname}",
+  "mobilePhone": f"{mobiePhone}",
+  "isDeleted": "false",
+  "isDisabled": "false",
+  "password": f"{password}"
+}
+    r = requests.post(f'http://{server}/api/v2.0/users', auth=auth, json = user_data)
+    if r.status_code != 200:
+        return 'Создание не удалось'
+    elif r.status_code == 200:
+        return 'Вы успешно зарегистрировались'
