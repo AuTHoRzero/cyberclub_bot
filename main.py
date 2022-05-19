@@ -62,6 +62,7 @@ if cursor.execute(exist_check).fetchall() == []:
     try:
         table = """CREATE TABLE %s(id INTEGER PRIMARY KEY,
                                    us_id INTEGER UNIQUE,
+                                   gizmo_user_id 
                                    phone_number CHARACTER(11),
                                    firstname CHARACTER(20),
                                    lastname CHARACTER(20),
@@ -87,7 +88,6 @@ async def process_help_command(message: types.Message):
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-
     check=cursor.execute("SELECT us_id FROM "+table_name+" WHERE us_id LIKE "+str(message.from_user.id))
     if check.fetchone() is None:
        await bot.send_message(message.from_user.id,'Отправь свой номер телефона, чтобы проверить твой аккаунт', reply_markup=keyboard.reg_keyboard)
@@ -100,18 +100,23 @@ async def start(message: types.Message):
 @dp.message_handler(content_types=types.ContentType.CONTACT)
 async def phone_number(message: types.Message):
     if message.contact is not None:
-        cursor.execute("UPDATE "+table_name+" SET phone_number='"+str(message.contact.phone_number)+"' WHERE us_id="+str(message.from_user.id))
-        await message.answer ('Введите своё имя')
-        await Registration.firstname.set()
+        find_user = get_users(1, message.contact.phone_number)
+        if find_user:
+            await message.answer(f'Мы нашли ваш аккаунт: {find_user[0]}')
+            cursor.execute("UPDATE "+table_name+" SET gizmo_user_id='"+str(find_user[1])+"' WHERE us_id="+str(message.from_user.id))
+        else:
+            cursor.execute("UPDATE "+table_name+" SET phone_number='"+str(message.contact.phone_number)+"' WHERE us_id="+str(message.from_user.id))
+            await message.answer ('Введите своё имя')
+            await Registration.firstname.set(phone_number)
 
 @dp.message_handler(state=(Registration.firstname))
-async def firstname(message: types.Message, state: FSMContext):
+async def firstname(phone_number, message: types.Message, state: FSMContext):
     cursor.execute("UPDATE "+table_name+" SET firstname='"+str(message.text)+"' WHERE us_id="+str(message.from_user.id))
     await message.answer ('Пожалуйста, укажи свою фамилию')
     await Registration.lastname.set()
 
 @dp.message_handler(state=(Registration.lastname))
-async def lastname (message: types.Message, state: FSMContext):
+async def lastname (phone_number, firstaname, message: types.Message, state: FSMContext):
     cursor.execute("UPDATE "+table_name+" SET lastname='"+str(message.text)+"' WHERE us_id="+str(message.from_user.id))
     await message.answer('Введите никнейм')
     await Registration.username.set()
