@@ -1,3 +1,5 @@
+from traceback import print_tb
+from unittest import result
 import requests
 import random
 import string
@@ -58,11 +60,11 @@ def booking_delite(reservation_id :int):
     else:
         return 'Ошибка удаления'
 
-def get_users(is_search :bool, mobilePhone :str):
+def get_users(is_search :int, mobilePhone :str = '', username :str = ''):
     if is_search == 0:
         r = requests.get(f'http://{server}/api/v2.0/users', auth=auth)
         pprint(r.json())
-    else:
+    elif is_search == 1:
         r = requests.get(f'http://{server}/api/v2.0/users', auth= auth)
         users_data = r.json()
         for data in users_data['result']['data']:
@@ -70,10 +72,18 @@ def get_users(is_search :bool, mobilePhone :str):
                 if data['isDeleted'] == 'false':
                     return data['username'], data['id']
 #                return data['mobilePhone']
+    elif is_search == 2:
+        r = requests.get(f'http://{server}/api/v2.0/users?Username={username}', auth= auth)
+        user = r.json()
+        for data in user['result']['data']:
+            if str(data['username']).lower() == username.lower():
+                return False
+            else:
+                return True
 
 
 
-def create_user(username, firstname, lastname, mobiePhone, password, email = "Не указан"):
+def create_user(username, firstname, lastname, mobiePhone, password, email = "telegram@progect.ru"):
     user_data = {
   "username": f"{username}",
   "email": f"{email}",
