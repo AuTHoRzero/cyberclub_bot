@@ -13,6 +13,8 @@ import sqlite3
 import random
 from sqlite3 import Date, Error
 
+from matplotlib import backend_managers
+
 ###################
 ##Aiogram support##
 ###################
@@ -27,8 +29,13 @@ from aiogram.utils import executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from click import password_option
 
-#####################
-##Call support file##
+
+#######################
+#Password banned chars#
+#######################
+banned_chars = ["а","б","в","г","д","е","ё","ж","з","и","й","к","л","м","н","о","п","р","с","т","у","ф","х","ц","ч","ш","щ","ъ","ы","ь","э","ю","я"]
+######################
+###Call support file##
 #####################
 from gizmo_connect import booking, booking_delite, create_user, get_booking, get_hosts, get_user_by_id, get_users
 import keyboard
@@ -46,6 +53,7 @@ class DataStorage():
 
 
 class Registration(StatesGroup):
+    phone_source = State()
     phone_number = State()
     firstname = State()
     lastname = State()
@@ -87,29 +95,36 @@ async def process_help_command(message: types.Message):
 async def start(message: types.Message):
     check=cursor.execute("SELECT us_id FROM "+table_name+" WHERE us_id LIKE "+str(message.from_user.id))
     if check.fetchone() is None:
-       await bot.send_message(message.from_user.id,'Отправь свой номер телефона, чтобы проверить твой аккаунт', reply_markup=keyboard.reg_keyboard)
+       await bot.send_message(message.from_user.id,'Здравствуйте! Для регистрации нужен номер телефона\nВведите его вручную или возьмите из telegram', reply_markup=keyboard.phone_source_keyboard)
        cursor.execute('INSERT INTO '+table_name+'(us_id) VALUES (?)',(str(message.from_user.id),))
+       await Registration.phone_number.set()
     else: 
        await bot.send_message(message.from_user.id,'Привет! Ты уже зарегистрирован, пожалуйста, выбери что хочешь сделать в главном меню', reply_markup=keyboard.main_menu)
 
-
-
-@dp.message_handler(content_types=types.ContentType.CONTACT)
+@dp.message_handler(state=(Registration.phone_number), content_types=types.ContentType.ANY)
 async def phone_number(message: types.Message, state: FSMContext):
-    if message.contact is not None:
-        find_user = get_users(1, message.contact.phone_number)
-        if find_user:
-            await message.answer(f'Мы нашли ваш аккаунт: {find_user[0]}', reply_markup=keyboard.main_menu)
-            cursor.execute("UPDATE "+table_name+" SET gizmo_user_id='"+str(find_user[1])+"' WHERE us_id="+str(message.from_user.id))
-        else:
-#            cursor.execute("UPDATE "+table_name+" SET phone_number='"+str(message.contact.phone_number)+"' WHERE us_id="+str(message.from_user.id))
-            await message.answer ('Аккаунт не найден, для дальнейшей работы пожалуйста зарегестрируйтесь\n\nВведите своё имя:')
-            await state.update_data(phone_number=message.contact.phone_number)
-            await Registration.firstname.set()
+     try:
+      print(message.text)
+      print(message.contact)
+     except:
+      print('none')
+     if message.text is not None:
+      await message.answer ('Пожалуйста, укажите своё имя')
+      await state.update_data(phone_number = message.text)
+      await Registration.firstname.set() 
+     elif message.contact is not None:
+      find_user = get_users(1, message.contact.phone_number)
+      if find_user:
+       await message.answer(f'Мы нашли Ваш аккаунт: {find_user[0]}', reply_markup=keyboard.main_menu)
+       cursor.execute("UPDATE "+table_name+" SET gizmo_user_id='"+str(find_user[1])+"' WHERE us_id="+str(message.from_user.id))
+      else:
+       await message.answer ('Аккаунт не найден, для дальнейшей работы пожалуйста, зарегистрируйтесь\n\nВведите своё имя:')
+       await state.update_data(phone_number=message.contact.phone_number)
+       await Registration.firstname.set()
 
 @dp.message_handler(state=(Registration.firstname))
 async def firstname(message: types.Message, state: FSMContext):
-    await message.answer ('Пожалуйста, укажи свою фамилию')
+    await message.answer ('Пожалуйста, укажите свою фамилию')
     await state.update_data(firstname = message.text)
     await Registration.lastname.set()
 
@@ -127,6 +142,7 @@ async def username (message: types.Message, state: FSMContext):
         await Registration.username.set()
     else:
         await message.answer('Придумайте пароль для аккаунта(Не менее 8 символов)')
+        
         await state.update_data(username = message.text)
         await Registration.password.set()
 
@@ -134,6 +150,9 @@ async def username (message: types.Message, state: FSMContext):
 async def password (message: types.Message, state: FSMContext):
     if len(str(message.text)) < 8:
         await message.answer('Пароль должен быть не менее 8 символов')
+        await Registration.password.set()
+    elif  any(char in banned_chars for char in str(message.text).lower):
+        await message.answer('Пароль содержит недопустимые символы (например кириллицу')
         await Registration.password.set()
     else:
         await state.update_data(password=message.text)

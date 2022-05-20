@@ -18,9 +18,9 @@ my_profile = KeyboardButton('Мой профиль')
 my_booking = KeyboardButton('Мои бронирования')
 main_menu = ReplyKeyboardMarkup(resize_keyboard=True).add(booking).row(my_booking, my_profile)
 
-reg_button = KeyboardButton(text="Отправить номер телефона", request_contact=True)
-reg_keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True).add(reg_button)
-
+from_tg = KeyboardButton(text="Взять из telegram", request_contact=True)
+#from_message = KeyboardButton(text = "Ввести вручную", callback_data='user')
+phone_source_keyboard = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2).row(from_tg)#, from_message)
 
 def gen_hour_keyboard():
     markup = InlineKeyboardMarkup(row_width=4)
@@ -43,3 +43,6 @@ def gen_hosts_keyboard():
     for hosts in count['result']['data']:
         markup.insert(InlineKeyboardButton(hosts['id'], callback_data=host_callback.new('HOST', hosts['id'])))
     return markup
+
+
+
