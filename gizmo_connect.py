@@ -18,7 +18,7 @@ def generate_random_string(length = 6):
 
 def get_hosts():
     r = requests.get(f'http://{server}/api/v2.0/hosts', auth=auth)
-    pprint(r.json())
+    return r.json()
 
 def booking( user_id, date, duration, host_id, phone = '0', note = 'Telegram bot booking', email = 'user@example.com'):
 #    print(date)

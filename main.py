@@ -78,9 +78,7 @@ else:
 ##Command##
 ###########
 
-#@dp.message_handler(commands=['start'])
-#async def start(message: types.Message):
-#    await message.answer ('Дата', reply_markup=await SimpleCalendar().start_calendar())
+
 @dp.message_handler(commands=['help'])
 async def process_help_command(message: types.Message):
     await message.reply("Техническая помощь: @Truedru @Authorzero")
@@ -195,6 +193,11 @@ async def duration_call(callback_query: types.CallbackQuery, callback_data: dict
     await bot.delete_message (callback_query.from_user.id, callback_query.message.message_id)
     resp = booking(DataStorage.time, DataStorage.duration, callback_data['host_id'])
     await bot.send_message(callback_query.from_user.id, resp)
+
+
+@dp.message_handler(text=['Бронирование'])
+async def start(message: types.Message):
+    await message.answer ('Выберите дату', reply_markup=await SimpleCalendar().start_calendar())
 
 @dp.message_handler(text=['Мои бронирования'])
 async def start(message: types.Message):

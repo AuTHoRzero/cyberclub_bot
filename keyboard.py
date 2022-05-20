@@ -3,6 +3,8 @@ from aiogram.types import ReplyKeyboardRemove, \
     InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.callback_data import CallbackData
 
+from gizmo_connect import get_hosts
+
 time_callback = CallbackData('time_call', 'name', 'time')
 duration_callback = CallbackData('duration_call', 'name', 'duration')
 host_callback = CallbackData('host_call', 'name', 'host_id')
@@ -37,6 +39,7 @@ def gen_duration_keyboard():
 def gen_hosts_keyboard():
     markup = InlineKeyboardMarkup(row_width=4)
     markup.row()
-    for host in range (1, 5, 1):
-        markup.insert(InlineKeyboardButton(host, callback_data=host_callback.new('HOST', host)))
+    count = get_hosts()
+    for hosts in count['result']['data']:
+        markup.insert(InlineKeyboardButton(hosts['id'], callback_data=host_callback.new('HOST', hosts['id'])))
     return markup
