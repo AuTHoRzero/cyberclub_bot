@@ -30,7 +30,7 @@ from click import password_option
 #####################
 ##Call support file##
 #####################
-from gizmo_connect import booking, booking_delite, get_booking, get_hosts, get_users
+from gizmo_connect import booking, booking_delite, create_user, get_booking, get_hosts, get_user_by_id, get_users
 import keyboard
 from keyboard import time_callback, duration_callback, host_callback
 from simple_calendar import calendar_callback, SimpleCalendar
@@ -65,11 +65,7 @@ if cursor.execute(exist_check).fetchall() == []:
     try:
         table = """CREATE TABLE %s(id INTEGER PRIMARY KEY,
                                    us_id INTEGER UNIQUE,
-                                   gizmo_user_id INTEGER UNIQUE,
-                                   phone_number CHARACTER(11),
-                                   firstname CHARACTER(20),
-                                   lastname CHARACTER(20),
-                                   username CHARACTER(25)
+                                   gizmo_user_id INTEGER
                                    );"""%table_name
         cursor.execute(table)
         print('Table '+table_name+' was succesfully created')
@@ -96,7 +92,7 @@ async def start(message: types.Message):
        await bot.send_message(message.from_user.id,'Отправь свой номер телефона, чтобы проверить твой аккаунт', reply_markup=keyboard.reg_keyboard)
        cursor.execute('INSERT INTO '+table_name+'(us_id) VALUES (?)',(str(message.from_user.id),))
     else: 
-       await bot.send_message(message.from_user.id,'Привет! Ты уже зарегистрирован, пожалуйста, выбери что хочешь сделать в главном меню')
+       await bot.send_message(message.from_user.id,'Привет! Ты уже зарегистрирован, пожалуйста, выбери что хочешь сделать в главном меню', reply_markup=keyboard.main_menu)
 
 
 
@@ -105,7 +101,8 @@ async def phone_number(message: types.Message, state: FSMContext):
     if message.contact is not None:
         find_user = get_users(1, message.contact.phone_number)
         if find_user:
-            await message.answer(f'Мы нашли ваш аккаунт: {find_user[0]}')
+            await message.answer(f'Мы нашли ваш аккаунт: {find_user[0]}', reply_markup=keyboard.main_menu)
+            cursor.execute("UPDATE "+table_name+" SET gizmo_user_id='"+str(find_user[1])+"' WHERE us_id="+str(message.from_user.id))
         else:
 #            cursor.execute("UPDATE "+table_name+" SET phone_number='"+str(message.contact.phone_number)+"' WHERE us_id="+str(message.from_user.id))
             await message.answer ('Аккаунт не найден, для дальнейшей работы пожалуйста зарегестрируйтесь\n\nВведите своё имя:')
@@ -114,21 +111,18 @@ async def phone_number(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=(Registration.firstname))
 async def firstname(message: types.Message, state: FSMContext):
-#    cursor.execute("UPDATE "+table_name+" SET firstname='"+str(message.text)+"' WHERE us_id="+str(message.from_user.id))
     await message.answer ('Пожалуйста, укажи свою фамилию')
     await state.update_data(firstname = message.text)
     await Registration.lastname.set()
 
 @dp.message_handler(state=(Registration.lastname))
 async def lastname (message: types.Message, state: FSMContext):
-#    cursor.execute("UPDATE "+table_name+" SET lastname='"+str(message.text)+"' WHERE us_id="+str(message.from_user.id))
     await message.answer('Придумайте логин')
     await state.update_data(lastname = message.text)
     await Registration.username.set()
 
 @dp.message_handler(state=(Registration.username))
 async def username (message: types.Message, state: FSMContext):
-#    cursor.execute("UPDATE "+table_name+" SET username='"+str(message.text)+"' WHERE us_id="+str(message.from_user.id))
     check_aviable = get_users(2,'None', message.text)
     if check_aviable == False:
         await message.answer ('Логин занят')
@@ -144,23 +138,28 @@ async def password (message: types.Message, state: FSMContext):
         await message.answer('Пароль должен быть не менее 8 символов')
         await Registration.password.set()
     else:
-        await message.answer('Вы успешно зарегестрированы!')
         await state.update_data(password=message.text)
         user_data = await state.get_data()
-        print(user_data['firstname'], user_data['phone_number'], user_data['lastname'], user_data['username'], user_data['password'])
+        creating = create_user(user_data['username'], user_data['firstname'], user_data['lastname'], user_data['phone_number'], user_data['password'])
+        if creating[2] == True:
+            cursor.excute("UPDATE "+table_name+" SET gizmo_user_id='"+str(creating[1])+"' WHERE us_id="+str(message.from_user.id))
+            await message.answer(creating[0], reply_markup=keyboard.main_menu)
+        else:
+            await message.answer(creating[0])
         await state.finish()
 
 
 @dp.message_handler(filters.Text(contains=['Мой профиль'], ignore_case=True))
 async def profile_info (message: types.Message, state: FSMContext):
     #Определяем переменные для того, чтобы вывести их, sql запрос и .fetchone() для вывода 1 значения (просто удобнее чем .fetchall())
-    firstname=cursor.execute("SELECT firstname FROM "+table_name+" WHERE us_id='"+str(message.from_user.id)+"'").fetchone()
-    lastname=cursor.execute("SELECT lastname FROM "+table_name+" WHERE us_id='"+str(message.from_user.id)+"'").fetchone()
-    phone_number=cursor.execute("SELECT phone_number FROM "+table_name+" WHERE us_id='"+str(message.from_user.id)+"'").fetchone()
-    username=cursor.execute("SELECT username FROM "+table_name+" WHERE us_id='"+str(message.from_user.id)+"'").fetchone()
+    gizmo_id=cursor.execute("SELECT gizmo_user_id FROM "+table_name+" WHERE us_id='"+str(message.from_user.id)+"'").fetchone()
+    gizmo_id = str(gizmo_id).replace("'", "").replace("(","").replace(")","").replace(",","")
     #Строка для отправки пользователю с функциями .replace для удаления лишних символов
-    info = str(str(firstname)+' '+str(lastname)+'\n'+'Номер телефона: '+str(phone_number)+'\nИмя пользователя: '+str(username)).replace("'", "").replace("(","").replace(")","").replace(",","")
-    if firstname:
+    print(gizmo_id)
+#    info = str(str(firstname)+' '+str(lastname)+'\n'+'Номер телефона: '+str(phone_number)+'\nИмя пользователя: '+str(username))
+    if gizmo_id:
+        resp = get_user_by_id(gizmo_id)
+        info = f'Логин: {resp[0]}\nИмя и Фамилия: {resp[1]} {resp[2]}\nНомер{resp[3]}'
         await bot.send_message(message.from_user.id ,info)
     else:
         await message.answer('Вы не зарегистрированы, нажмите на:\n/start')
@@ -172,7 +171,6 @@ async def process_simple_calendar(callback_query: types.CallbackQuery, callback_
     if selected:
         await bot.delete_message (callback_query.from_user.id, callback_query.message.message_id)
         await bot.send_message(callback_query.from_user.id, 'Время', reply_markup = keyboard.gen_hour_keyboard())
-#        print(f'{date}')
         DataStorage.data = date
 
 
@@ -195,7 +193,6 @@ async def duration_call(callback_query: types.CallbackQuery, callback_data: dict
 @dp.callback_query_handler(host_callback.filter())
 async def duration_call(callback_query: types.CallbackQuery, callback_data: dict):
     await bot.delete_message (callback_query.from_user.id, callback_query.message.message_id)
-#    print(f'{DataStorage.time}Z', DataStorage.duration, callback_data['host_id'])
     resp = booking(DataStorage.time, DataStorage.duration, callback_data['host_id'])
     await bot.send_message(callback_query.from_user.id, resp)
 

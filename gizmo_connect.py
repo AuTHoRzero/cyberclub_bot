@@ -69,7 +69,7 @@ def get_users(is_search :int, mobilePhone :str = '', username :str = ''):
         users_data = r.json()
         for data in users_data['result']['data']:
             if data['mobilePhone'] == mobilePhone:
-                if data['isDeleted'] == 'false':
+                if data['isDeleted'] == False:
                     return data['username'], data['id']
 #                return data['mobilePhone']
     elif is_search == 2:
@@ -81,24 +81,36 @@ def get_users(is_search :int, mobilePhone :str = '', username :str = ''):
             else:
                 return True
 
+def get_user_by_id(user_id):
+    r = requests.get(f'http://{server}/api/v2.0/users/{user_id}', auth=auth)
+    if r.status_code == 200:
+        user = r.json()
+        return user['result']['username'], user['result']['firstName'], user['result']['lastName'], user['result']['mobilePhone']
 
 
 def create_user(username, firstname, lastname, mobiePhone, password, email = "telegram@progect.ru"):
     user_data = {
   "username": f"{username}",
-  "email": f"{email}",
   "userGroupId": 1,
-  "isNegativeBalanceAllowed": "false",
-  "isPersonalInfoRequested": "false",
+  "isNegativeBalanceAllowed": False,
+  "isPersonalInfoRequested": False,
   "firstName": f"{firstname}",
   "lastName": f"{lastname}",
   "mobilePhone": f"{mobiePhone}",
-  "isDeleted": "false",
-  "isDisabled": "false",
+  "isDeleted": False,
+  "isDisabled": False,
   "password": f"{password}"
 }
     r = requests.post(f'http://{server}/api/v2.0/users', auth=auth, json = user_data)
+    resp = r.json()
     if r.status_code != 200:
-        return 'Создание не удалось'
+        return 'Создание не удалось', 'None', False
     elif r.status_code == 200:
-        return 'Вы успешно зарегистрировались'
+        return 'Вы успешно зарегистрировались', resp['result']['id'], True
+
+def delete_user(id):
+    r = requests.delete(f'http://{server}/api/v2.0/users/{id}')
+    if r.status_code == 200:
+        return 'Удаление завершено'
+    else:
+        return 'Возникли проблемы'
