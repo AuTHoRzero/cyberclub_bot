@@ -14,7 +14,7 @@ host_callback = CallbackData('host_call', 'name', 'host_id')
 booking = KeyboardButton('Бронирование')
 my_profile = KeyboardButton('Мой профиль')
 my_booking = KeyboardButton('Мои бронирования')
-main_menu = ReplyKeyboardMarkup(resize_keyboard=True).add(my_booking)
+main_menu = ReplyKeyboardMarkup(resize_keyboard=True).add(booking).row(my_booking, my_profile)
 
 reg_button = KeyboardButton(text="Отправить номер телефона", request_contact=True)
 reg_keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True).add(reg_button)
