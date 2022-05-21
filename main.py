@@ -47,12 +47,6 @@ from storage import delete_data, memory_storage, data_storage, return_data
 bot = Bot(token='1569769267:AAH07LHrTdox6L3B3TWpQvQn8_jkKb8lCWU')
 dp = Dispatcher(bot, storage=MemoryStorage())
 
-class Booking(StatesGroup):
-    date = State()
-    time = State()
-    duration = State()
-    host = State()
-
 class Registration(StatesGroup):
     phone_source = State()
     phone_number = State()
