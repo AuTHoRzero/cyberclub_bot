@@ -20,7 +20,7 @@ def get_hosts():
     r = requests.get(f'http://{server}/api/v2.0/hosts', auth=auth)
     return r.json()
 
-def booking( user_id, date, duration, host_id, phone = '0', note = 'Telegram bot booking', email = 'user@example.com'):
+def booking( user_id, date, duration, host_id, phone = '0', note = 'Telegram bot booking', email = 'telegram@project.ru'):
 #    print(date)
     data = {
     "id": f'{user_id}',
@@ -88,7 +88,7 @@ def get_user_by_id(user_id):
         return user['result']['username'], user['result']['firstName'], user['result']['lastName'], user['result']['mobilePhone']
 
 
-def create_user(username, firstname, lastname, mobiePhone, password, email = "telegram@progect.ru"):
+def create_user(username, firstname, lastname, mobiePhone, password):
     user_data = {
   "username": f"{username}",
   "userGroupId": 1,
