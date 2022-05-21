@@ -1,5 +1,3 @@
-from traceback import print_tb
-from unittest import result
 import requests
 import random
 import string
@@ -21,7 +19,6 @@ def get_hosts():
     return r.json()
 
 def booking( user_id, date, duration, host_id, phone = '0', note = 'Telegram bot booking', email = 'telegram@project.ru'):
-#    print(date)
     data = {
     "id": f'{user_id}',
     "date": f"{str(date)}",
@@ -71,7 +68,6 @@ def get_users(is_search :int, mobilePhone :str = '', username :str = ''):
             if data['mobilePhone'] == mobilePhone:
                 if data['isDeleted'] == False:
                     return data['username'], data['id']
-#                return data['mobilePhone']
     elif is_search == 2:
         r = requests.get(f'http://{server}/api/v2.0/users?Username={username}', auth= auth)
         user = r.json()
