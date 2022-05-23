@@ -20,9 +20,9 @@ def get_hosts():
 
 def booking( user_id, date, duration, host_id, phone = '0', note = 'Telegram bot booking', email = 'telegram@project.ru'):
     data = {
-    "id": f'{user_id}',
+    "userId": f'{user_id}',
     "date": f"{str(date)}",
-    "duration": int(duration),
+    "duration": int(duration)*60,
     "contactPhone": f"{phone}",
     "contactEmail": f"{email}",
     "note": f"{note}",
@@ -36,7 +36,6 @@ def booking( user_id, date, duration, host_id, phone = '0', note = 'Telegram bot
   }
   
     r = requests.post(f'http://{server}/api/v2.0/reservations', auth = auth, json=data )
-    pprint(r.json())
     if r.status_code == 200:
         return 'Бронирование завершено'
     else:
@@ -44,13 +43,12 @@ def booking( user_id, date, duration, host_id, phone = '0', note = 'Telegram bot
 
 def get_booking(user_id :int):
     r = requests.get(f'http://{server}/api/v2.0/reservations?UserId={user_id}', auth=auth)
-    pprint(r.json())
     if r.status_code == 200:
         return r.json()
     else:
-        return '((((('
+        return False
 
-def booking_delite(reservation_id :int):
+def booking_delete(reservation_id :int):
     r = requests.delete(f'http://{server}/api/v2.0/reservations/{reservation_id}', auth=auth)
     if r.status_code == 200:
         return 'Удаление завершено'

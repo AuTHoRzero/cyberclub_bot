@@ -12,6 +12,7 @@ import datetime
 import sqlite3
 import random
 from sqlite3 import Date, Error
+from tabnanny import check
 
 
 ###################
@@ -34,12 +35,19 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 #Password banned chars#
 #######################
 banned_chars = ["а","б","в","г","д","е","ё","ж","з","и","й","к","л","м","н","о","п","р","с","т","у","ф","х","ц","ч","ш","щ","ъ","ы","ь","э","ю","я"]
+def banned_check(text):
+    for char in banned_chars:
+        if char in text:
+            return False
+            break
+        else:
+            return True
 ######################
 ###Call support file##
 #####################
-from gizmo_connect import booking, booking_delite, create_user, get_booking, get_hosts, get_user_by_id, get_users
+from gizmo_connect import booking, booking_delete, create_user, get_booking, get_hosts, get_user_by_id, get_users
 import keyboard
-from keyboard import time_callback, duration_callback, host_callback
+from keyboard import gen_delete_booking_keyboard, time_callback, duration_callback, host_callback, delete_callback
 from simple_calendar import calendar_callback, SimpleCalendar
 from storage import delete_data, memory_storage, data_storage, return_data
 
@@ -48,6 +56,7 @@ bot = Bot(token='1569769267:AAH07LHrTdox6L3B3TWpQvQn8_jkKb8lCWU')
 dp = Dispatcher(bot, storage=MemoryStorage())
 
 class Registration(StatesGroup):
+    manual_phone_number = State()
     phone_source = State()
     phone_number = State()
     firstname = State()
@@ -95,11 +104,24 @@ async def start(message: types.Message):
     if check.fetchone() is None:
        await bot.send_message(message.from_user.id,'Здравствуйте! Для регистрации нужен номер телефона\nВведите его вручную или возьмите из telegram', reply_markup=keyboard.phone_source_keyboard)
        cursor.execute('INSERT INTO '+table_name+'(us_id) VALUES (?)',(str(message.from_user.id),))
-       await Registration.phone_number.set()
     else: 
        await bot.send_message(message.from_user.id,'Привет! Ты уже зарегистрирован, пожалуйста, выбери что хочешь сделать в главном меню', reply_markup=keyboard.main_menu)
 
-@dp.message_handler(state=(Registration.phone_number), content_types=types.ContentType.ANY)
+
+#@dp.message_handler(content_types=types.ContentType.CONTACT)
+#async def phone_number(message: types.Message, state: FSMContext):
+#    if message.contact is not None:
+#        find_user = get_users(1, message.contact.phone_number)
+#        if find_user:
+#            await message.answer(f'Мы нашли ваш аккаунт: {find_user[0]}', reply_markup=keyboard.main_menu)
+#            cursor.execute("UPDATE "+table_name+" SET gizmo_user_id='"+str(find_user[1])+"' WHERE us_id="+str(message.from_user.id))
+#        else:
+#            await message.answer ('Аккаунт не найден, для дальнейшей работы пожалуйста зарегестрируйтесь\n\nВведите своё имя:')
+#            await state.update_data(phone_number=message.contact.phone_number)
+#            await Registration.firstname.set()
+
+
+@dp.message_handler(content_types=types.ContentType.CONTACT)
 async def phone_number(message: types.Message, state: FSMContext):
      if message.text is not None:
         find_user = get_users(1, message.text)
@@ -121,6 +143,26 @@ async def phone_number(message: types.Message, state: FSMContext):
        await message.answer ('Аккаунт не найден, для дальнейшей работы пожалуйста, зарегистрируйтесь\n\nВведите своё имя:')
        await state.update_data(phone_number=message.contact.phone_number)
        await Registration.firstname.set()
+
+@dp.message_handler(text=['Ввести вручную'])
+async def manual_phone_number(message: types.Message):
+    await message.answer('Укажите свой номер телефона в формате +79XXXXXXXXX')
+    await Registration.manual_phone_number.set()
+
+@dp.message_handler(state=(Registration.manual_phone_number))
+async def firstname(message: types.Message, state: FSMContext):
+    if str(message.text).__contains__('+') and len(message.text) == 12:
+        find_user = get_users(1, message.text)
+        if find_user:
+            await message.answer(f'Мы нашли Ваш аккаунт: {find_user[0]}', reply_markup=keyboard.main_menu)
+            cursor.execute("UPDATE "+table_name+" SET gizmo_user_id='"+str(find_user[1])+"' WHERE us_id="+str(message.from_user.id))
+            await state.finish()
+        else:
+            await message.answer ('Пожалуйста, укажите своё имя')
+            await state.update_data(phone_number=message.text)
+            await Registration.firstname.set()
+    else:
+        await message.answer('Введите номер телефона по указанному формату')
 
 @dp.message_handler(state=(Registration.firstname))
 async def firstname(message: types.Message, state: FSMContext):
@@ -148,18 +190,20 @@ async def username (message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=(Registration.password))
 async def password (message: types.Message, state: FSMContext):
+    check = str(message.text).lower
     if len(str(message.text)) < 8:
         await message.answer('Пароль должен быть не менее 8 символов')
         await Registration.password.set()
-    elif  any(char in banned_chars for char in str(message.text).lower):
+    elif  any(char in banned_chars for char in str(message.text).lower()):
         await message.answer('Пароль содержит недопустимые символы (например кириллицу')
         await Registration.password.set()
     else:
         await state.update_data(password=message.text)
         user_data = await state.get_data()
+        print(user_data)
         creating = create_user(user_data['username'], user_data['firstname'], user_data['lastname'], user_data['phone_number'], user_data['password'])
         if creating[2] == True:
-            cursor.excute("UPDATE "+table_name+" SET gizmo_user_id='"+str(creating[1])+"' WHERE us_id="+str(message.from_user.id))
+            cursor.execute("UPDATE "+table_name+" SET gizmo_user_id='"+str(creating[1])+"' WHERE us_id="+str(message.from_user.id))
             await message.answer(creating[0], reply_markup=keyboard.main_menu)
         else:
             await message.answer(creating[0])
@@ -171,9 +215,9 @@ async def profile_info (message: types.Message):
     #Определяем переменные для того, чтобы вывести их, sql запрос и .fetchone() для вывода 1 значения (просто удобнее чем .fetchall())
     gizmo_id=cursor.execute("SELECT gizmo_user_id FROM "+table_name+" WHERE us_id='"+str(message.from_user.id)+"'").fetchone()
     gizmo_id = str(gizmo_id).replace("'", "").replace("(","").replace(")","").replace(",","")
-    if gizmo_id:
+    if gizmo_id != 'None':
         resp = get_user_by_id(gizmo_id)
-        info = f'Логин: {resp[0]}\nИмя и Фамилия: {resp[1]} {resp[2]}\nНомер{resp[3]}'
+        info = f'Логин: {resp[0]}\nИмя и Фамилия: {resp[1]} {resp[2]}\nНомер: {resp[3]}'
         await bot.send_message(message.from_user.id ,info)
     else:
         await message.answer('Вы не зарегистрированы, нажмите на:\n/start')
@@ -209,19 +253,72 @@ async def duration_call(callback_query: types.CallbackQuery, callback_data: dict
     await bot.delete_message (callback_query.from_user.id, callback_query.message.message_id)
     await memory_storage(user_id=callback_query.from_user.id, host=callback_data['host_id'])
     gizmo_id = cursor.execute("SELECT gizmo_user_id FROM "+table_name+" WHERE us_id='"+str(callback_query.from_user.id)+"'").fetchone()
+    gizmo_id = str(gizmo_id).replace("'", "").replace("(","").replace(")","").replace(",","")
     data = await return_data(callback_query.from_user.id)
     resp = booking(user_id = gizmo_id, date = data[0], duration = data[1], host_id = data[2])
-    await delete_data(message.from_user.id)
+    await delete_data(callback_query.from_user.id)
     await bot.send_message(callback_query.from_user.id, resp)
 
 
 @dp.message_handler(text=['Бронирование'])
-async def start(message: types.Message):
+async def booking_start(message: types.Message):
     await message.answer ('Выберите дату', reply_markup=await SimpleCalendar().start_calendar())
 
 @dp.message_handler(text=['Мои бронирования'])
-async def start(message: types.Message):
-    await message.answer('Нет броней, даже если они есть их нет')
+async def get_booking_main(message: types.Message):
+    gizmo_id = cursor.execute("SELECT gizmo_user_id FROM "+table_name+" WHERE us_id='"+str(message.from_user.id)+"'").fetchone()
+    gizmo_id = str(gizmo_id).replace("'", "").replace("(","").replace(")","").replace(",","")
+    sort = get_booking(gizmo_id)
+    if sort != False:
+        check = sort['result']['data']
+        if check:
+            data = ''
+            i = 0
+            ids = []
+            for datas in sort['result']['data']:
+                i = i + 1
+                formating = datas['date']
+                formating = str(formating).replace(':00','').replace('T',' Время: ')
+                formating = f'{formating}:00'
+                duration = datas['duration']
+                ids.append(datas['id'])
+                host = datas['hosts'][0]['hostId']
+                data += (f'Номер брони: {i}\nДата: {formating}\nПродолжительность: {duration/60}\nНомер ПК: {host}\n\n')
+            await message.answer(data, reply_markup=gen_delete_booking_keyboard(ids))
+        else:
+            await message.answer('Брони не найдены')
+    else:
+        await message.answer('Брони не найдены')
+
+@dp.callback_query_handler(delete_callback.filter())
+async def duration_call(callback_query: types.CallbackQuery, callback_data: dict):
+    await bot.delete_message (callback_query.from_user.id, callback_query.message.message_id)
+    message = booking_delete(callback_data['booking_id'])
+    await callback_query.answer(message)
+    gizmo_id = cursor.execute("SELECT gizmo_user_id FROM "+table_name+" WHERE us_id='"+str(callback_query.from_user.id)+"'").fetchone()
+    gizmo_id = str(gizmo_id).replace("'", "").replace("(","").replace(")","").replace(",","")
+    sort = get_booking(gizmo_id)
+    if sort != False:
+        check = sort['result']['data']
+        if check:
+            data = ''
+            i = 0
+            ids = []
+            for datas in sort['result']['data']:
+                i = i + 1
+                formating = datas['date']
+                formating = str(formating).replace(':00','').replace('T',' Время: ')
+                formating = f'{formating}:00'
+                duration = datas['duration']
+                ids.append(datas['id'])
+                host = datas['hosts'][0]['hostId']
+                data += (f'Номер брони: {i}\nДата: {formating}\nПродолжительность: {duration/60}\nНомер ПК: {host}\n\n')
+            await bot.send_message(callback_query.from_user.id, data, reply_markup=gen_delete_booking_keyboard(ids))
+        else:
+            await bot.send_message(callback_query.from_user.id,'Брони не найдены')
+    else:
+        await bot.send_message(callback_query.from_user.id,'Брони не найдены')
+
 
 if __name__ == '__main__':
  executor.start_polling(dp, skip_updates=True)
