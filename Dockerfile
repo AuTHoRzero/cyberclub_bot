@@ -6,7 +6,6 @@ ENV gizmo_api_token = ''
 ENV gizmo_server_ip = ''
 ENV db_table = ''
 
-ARG DEBIAN_FRONTEND=noninteractive
 
 RUN adduser --disabled-password gizmo_bot --gecos "gizmo_bot" >> /dev/null
 RUN apt-get update && DEBCONF_NOWARNINGS=yes DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && apt-get clean

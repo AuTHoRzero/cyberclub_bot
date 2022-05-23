@@ -1,3 +1,4 @@
+from time import strftime
 import requests
 import random
 import string
@@ -40,6 +41,10 @@ def booking( user_id, date, duration, host_id, phone = '0', note = 'Telegram bot
         return 'Бронирование завершено'
     else:
         return 'Ошибка бронирования'
+
+def check_booking(date):
+    date_end = date + strftime(day=1)
+    r = requests.get(f'http://{sever}/api/v2.0/reservations?DateFrom={date}&DateTo={date_end}')
 
 def get_booking(user_id :int):
     r = requests.get(f'http://{server}/api/v2.0/reservations?UserId={user_id}', auth=auth)

@@ -35,21 +35,20 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 #Password banned chars#
 #######################
 banned_chars = ["а","б","в","г","д","е","ё","ж","з","и","й","к","л","м","н","о","п","р","с","т","у","ф","х","ц","ч","ш","щ","ъ","ы","ь","э","ю","я"]
-def banned_check(text):
-    for char in banned_chars:
-        if char in text:
-            return False
-            break
-        else:
-            return True
+
 ######################
 ###Call support file##
-#####################
+######################
 from gizmo_connect import booking, booking_delete, create_user, get_booking, get_hosts, get_user_by_id, get_users
 import keyboard
 from keyboard import gen_delete_booking_keyboard, time_callback, duration_callback, host_callback, delete_callback
 from simple_calendar import calendar_callback, SimpleCalendar
 from storage import delete_data, memory_storage, data_storage, return_data
+
+############
+##Get_envs##
+############
+USER = os.getenv('API_USER')
 
 #Bot 
 bot = Bot(token='1569769267:AAH07LHrTdox6L3B3TWpQvQn8_jkKb8lCWU')
@@ -283,7 +282,8 @@ async def get_booking_main(message: types.Message):
                 duration = datas['duration']
                 ids.append(datas['id'])
                 host = datas['hosts'][0]['hostId']
-                data += (f'Номер брони: {i}\nДата: {formating}\nПродолжительность: {duration/60}\nНомер ПК: {host}\n\n')
+                duration = duration / 60
+                data += (f'Номер брони: {i}\nДата: {formating}\nПродолжительность: {str(duration).replace(".0","")}ч.\nНомер ПК: {host}\n\n')
             await message.answer(data, reply_markup=gen_delete_booking_keyboard(ids))
         else:
             await message.answer('Брони не найдены')
@@ -312,7 +312,8 @@ async def duration_call(callback_query: types.CallbackQuery, callback_data: dict
                 duration = datas['duration']
                 ids.append(datas['id'])
                 host = datas['hosts'][0]['hostId']
-                data += (f'Номер брони: {i}\nДата: {formating}\nПродолжительность: {duration/60}\nНомер ПК: {host}\n\n')
+                duration = duration / 60
+                data += (f'Номер брони: {i}\nДата: {formating}\nПродолжительность: {str(duration).replace(".0","")}ч.\nНомер ПК: {host}\n\n')
             await bot.send_message(callback_query.from_user.id, data, reply_markup=gen_delete_booking_keyboard(ids))
         else:
             await bot.send_message(callback_query.from_user.id,'Брони не найдены')
