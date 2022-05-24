@@ -1,3 +1,6 @@
+######################################
+##File for asynchronous file storage##
+######################################
 import asyncio
 from datetime import datetime, timedelta
 data_storage = []
@@ -35,4 +38,3 @@ async def delete_data(user_id):
     for i in data_storage:
         if str(i).__contains__(str(user_id)):
             data_storage.remove(i)
-            print(data_storage)

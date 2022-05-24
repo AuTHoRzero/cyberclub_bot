@@ -5,15 +5,18 @@ from aiogram.utils.callback_data import CallbackData
 
 from gizmo_connect import get_hosts
 
+#########################
+##Callback dictionaries##
+#########################
 time_callback = CallbackData('time_call', 'name', 'time')
 duration_callback = CallbackData('duration_call', 'name', 'duration')
 host_callback = CallbackData('host_call', 'name', 'host_id')
 delete_callback = CallbackData('delete_call','name','booking_id')
+add_host_callback = CallbackData('add_host', 'name', 'choose')
 
 #####################
 ##Main munu buttons##
 #####################
-
 booking = KeyboardButton('Бронирование')
 my_profile = KeyboardButton('Мой профиль')
 my_booking = KeyboardButton('Мои бронирования')
@@ -23,6 +26,13 @@ from_tg = KeyboardButton(text="Взять из telegram", request_contact=True)
 from_message = KeyboardButton(text = "Ввести вручную", callback_data='user')
 phone_source_keyboard = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2).row(from_tg, from_message)
 
+yes_host = InlineKeyboardButton('Да', callback_data=add_host_callback.new('ADD_HOST', True))
+no_host = InlineKeyboardButton('Нет', callback_data=add_host_callback.new('DONT_ADD', False))
+host_add = InlineKeyboardMarkup(row_width=2).row(yes_host,no_host)
+
+######################
+##Keyboard functions##
+######################
 def gen_hour_keyboard():
     markup = InlineKeyboardMarkup(row_width=4)
     markup.row()
