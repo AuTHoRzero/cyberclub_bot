@@ -12,6 +12,7 @@ import datetime
 import sqlite3
 import random
 from sqlite3 import Date, Error
+from xml.dom.expatbuilder import FilterVisibilityController
 
 
 ###################
@@ -232,7 +233,9 @@ async def duration_call(callback_query: types.CallbackQuery, callback_data: dict
     await bot.delete_message (callback_query.from_user.id, callback_query.message.message_id)
     await memory_storage(user_id=callback_query.from_user.id, duration=callback_data['duration'])
     data = await return_data(callback_query.from_user.id)
-    print(data[0].strftime('%Y'))
+    for_input = data[0]
+    keyboard.gen_free_hosts_keyboard(for_input)
+#    print(for_input.strftime('%Y-%m-%d'))
     await bot.send_message(callback_query.from_user.id, 'Номер ПК', reply_markup=keyboard.gen_hosts_keyboard())
 
 

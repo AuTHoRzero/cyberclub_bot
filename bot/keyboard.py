@@ -3,7 +3,7 @@ from aiogram.types import ReplyKeyboardRemove, \
     InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.callback_data import CallbackData
 
-from gizmo_connect import get_hosts
+from gizmo_connect import check_booking, get_hosts
 
 #########################
 ##Callback dictionaries##
@@ -57,6 +57,7 @@ def gen_hosts_keyboard():
 
 def gen_free_hosts_keyboard(date):
     host = get_hosts()
+    free_time = check_booking(date)
 
 
 def gen_delete_booking_keyboard(bookings):
