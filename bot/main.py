@@ -92,6 +92,11 @@ else:
 ###########
 ##Command##
 ###########
+@dp.message_handler(commands=['check'])
+async def checkers(message: types.Message):
+    time = datetime.datetime.now().strftime('%Y-%m-%d')
+    print(time)
+
 @dp.message_handler(commands=['help'])
 async def process_help_command(message: types.Message):
     await message.reply("Техническая помощь: @Truedru @Authorzero")
@@ -226,6 +231,8 @@ async def time_call(callback_query: types.CallbackQuery, callback_data: dict):
 async def duration_call(callback_query: types.CallbackQuery, callback_data: dict):
     await bot.delete_message (callback_query.from_user.id, callback_query.message.message_id)
     await memory_storage(user_id=callback_query.from_user.id, duration=callback_data['duration'])
+    data = await return_data(callback_query.from_user.id)
+    print(data[0].strftime('%Y'))
     await bot.send_message(callback_query.from_user.id, 'Номер ПК', reply_markup=keyboard.gen_hosts_keyboard())
 
 
@@ -236,7 +243,9 @@ async def duration_call(callback_query: types.CallbackQuery, callback_data: dict
     gizmo_id = cursor.execute("SELECT gizmo_user_id FROM "+table_name+" WHERE us_id='"+str(callback_query.from_user.id)+"'").fetchone()
     gizmo_id = str(gizmo_id).replace("'", "").replace("(","").replace(")","").replace(",","")
     data = await return_data(callback_query.from_user.id)
-    resp = booking(user_id = gizmo_id, date = data[0], duration = data[1], host_id = data[2])
+    date = data[0].isoformat()
+    date = f'{date}Z'
+    resp = booking(user_id = gizmo_id, date = date, duration = data[1], host_id = data[2])
     await bot.send_message(callback_query.from_user.id, f'{resp}\nДобавить пк на это время?', reply_markup=keyboard.host_add)
 
 @dp.callback_query_handler(add_host_callback.filter())

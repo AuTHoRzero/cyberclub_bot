@@ -55,6 +55,10 @@ def gen_hosts_keyboard():
         markup.insert(InlineKeyboardButton(hosts['id'], callback_data=host_callback.new('HOST', hosts['id'])))
     return markup
 
+def gen_free_hosts_keyboard(date):
+    host = get_hosts()
+
+
 def gen_delete_booking_keyboard(bookings):
     markup = InlineKeyboardMarkup(row_width=4)
     markup.row()

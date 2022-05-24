@@ -43,8 +43,8 @@ def booking( user_id, date, duration, host_id, phone = '0', note = 'Telegram bot
         return 'Ошибка бронирования'
 
 def check_booking(date):
-    date_end = date + strftime(day=1)
-    r = requests.get(f'http://{server}/api/v2.0/reservations?DateFrom={date}&DateTo={date_end}')
+    date_start = date - strftime(day=1)
+    r = requests.get(f'http://{server}/api/v2.0/reservations?DateFrom={date_start}&DateTo={date}')
 
 def get_booking(user_id :int):
     r = requests.get(f'http://{server}/api/v2.0/reservations?UserId={user_id}', auth=auth)

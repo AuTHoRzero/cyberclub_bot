@@ -31,7 +31,7 @@ async def return_data(user_id):
     for data in data_storage:
         if str(data).__contains__(str(user_id)):
             time = data['date'] + timedelta(hours=data['time'])
-            time = f'{time.isoformat()}Z'
+#            time = f'{time.isoformat()}Z'
             return time, data['duration'], data['host']
 
 async def delete_data(user_id):
