@@ -14,7 +14,6 @@ import random
 from sqlite3 import Date, Error
 from xml.dom.expatbuilder import FilterVisibilityController
 
-
 ###################
 ##Aiogram support##
 ###################
@@ -28,8 +27,12 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils import executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
-
-
+###########
+##Logging##
+###########
+from logging import StreamHandler, Formatter
+from logging import exception
+import logging
 
 #######################
 #Password banned chars#
@@ -48,7 +51,20 @@ from storage import delete_data, memory_storage, data_storage, return_data
 ############
 ##Get_envs##
 ############
-USER = os.getenv('API_USER')
+telegram_api_token = os.getenv('telegram_api_token')
+gizmo_api_token = os.getenv('gizmo_api_token')
+gizmo_server_ip = os.getenv('gizmo_server_ip')
+db_table = os.getenv('db_table')
+
+##################
+##Logging config##
+##################
+Log_Format = "%(levelname)s %(asctime)s - %(message)s"
+
+logging.basicConfig(filename = "../volume/bot.log",
+                    format = Log_Format,
+                    level = logging.INFO)
+logger = logging.getLogger()
 
 #######
 ##Bot##
@@ -78,6 +94,7 @@ table_name = 'users_table'
 exist_check = """SELECT name FROM sqlite_master WHERE type='table' AND name='%s';"""%table_name
 if cursor.execute(exist_check).fetchall() == []:
     print('Table '+table_name+' doesn''t exists, creating...')
+    logger.info('Table '+table_name+' doesn''t exists, creating...')
     try:
         table = """CREATE TABLE %s(id INTEGER PRIMARY KEY,
                                    us_id INTEGER UNIQUE,
@@ -85,8 +102,10 @@ if cursor.execute(exist_check).fetchall() == []:
                                    );"""%table_name
         cursor.execute(table)
         print('Table '+table_name+' was succesfully created')
+        logger.info('Table '+table_name+' was succesfully created')
     except Exception as e:
         print('Something went wrong, table doesn''t exist and wasn''t created\n')
+        logger.exception(e)
 else: 
     print('Table '+table_name+' exists, skipping creation')
 
