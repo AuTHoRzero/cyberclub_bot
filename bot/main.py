@@ -142,17 +142,17 @@ async def phone_number(message: types.Message, state: FSMContext):
              await message.answer(f'Мы нашли Ваш аккаунт: {find_user[0]}', reply_markup=keyboard.main_menu)
              cursor.execute("UPDATE "+table_name+" SET gizmo_user_id='"+str(find_user[1])+"' WHERE us_id="+str(message.from_user.id))
              await state.finish()
-        else:
-            contact = f'+{str(message.contact.phone_number)}'
-            find_user = get_users(1, contact)
-            if find_user:
-             await message.answer(f'Мы нашли Ваш аккаунт: {find_user[0]}', reply_markup=keyboard.main_menu)
-             cursor.execute("UPDATE "+table_name+" SET gizmo_user_id='"+str(find_user[1])+"' WHERE us_id="+str(message.from_user.id))
-             await state.finish()
             else:
-               await message.answer ('Аккаунт не найден, для дальнейшей работы пожалуйста, зарегистрируйтесь\n\nВведите своё имя:')
-               await state.update_data(phone_number=message.contact.phone_number)
-               await Registration.firstname.set()
+                contact = f'+{str(message.contact.phone_number)}'
+                find_user = get_users(1, contact)
+                if find_user:
+                 await message.answer(f'Мы нашли Ваш аккаунт: {find_user[0]}', reply_markup=keyboard.main_menu)
+                 cursor.execute("UPDATE "+table_name+" SET gizmo_user_id='"+str(find_user[1])+"' WHERE us_id="+str(message.from_user.id))
+                 await state.finish()
+                else:
+                   await message.answer ('Аккаунт не найден, для дальнейшей работы пожалуйста, зарегистрируйтесь\n\nВведите своё имя:')
+                   await state.update_data(phone_number=message.contact.phone_number)
+                   await Registration.firstname.set()
 
 @dp.message_handler(text=['Ввести вручную'])
 async def manual_phone_number(message: types.Message):
@@ -283,7 +283,8 @@ async def duration_call(callback_query: types.CallbackQuery, callback_data: dict
 async def process_simple_calendar(callback_query: types.CallbackQuery, callback_data: dict):
     await bot.delete_message (callback_query.from_user.id, callback_query.message.message_id)
     if callback_data['choose'] == 'True':
-        await bot.send_message(callback_query.from_user.id, 'Номер ПК', reply_markup=keyboard.gen_hosts_keyboard())
+        data = await return_data(callback_query.from_user.id)
+        await bot.send_message(callback_query.from_user.id, 'Номер ПК', reply_markup=keyboard.gen_free_hosts_keyboard(data[0], data[3], data[1]))
     else:
         await delete_data(callback_query.from_user.id)
 
@@ -296,7 +297,7 @@ async def booking_start(message: types.Message):
         await delete_data(message.from_user.id)
     except:
         pass
-    
+
 @dp.message_handler(text=['Мои бронирования'])
 async def get_booking_main(message: types.Message):
     gizmo_id = cursor.execute("SELECT gizmo_user_id FROM "+table_name+" WHERE us_id='"+str(message.from_user.id)+"'").fetchone()
