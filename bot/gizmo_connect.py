@@ -43,14 +43,19 @@ def booking( user_id, date, duration, host_id, phone = '0', note = 'Telegram bot
     else:
         return 'Ошибка бронирования'
 
-def check_booking(date):
+def check_booking(date, time_start, duration):
+    no = []
+    time_end = time_start + int(duration)
     date_start = date - timedelta(days=1)
     date_start = date_start.strftime('%Y-%m-%d')
-    r = requests.get(f'http://{server}/api/v2.0/reservations?DateFrom={date_start}&DateTo={date}', auth=auth)
+    date = date + timedelta(days=1)
+    date = date.strftime('%Y-%m-%d')
+    r = requests.get(f'http://{server}/api/v2.0/reservations?DateFrom={date_start}&DateTo={date}&StartingAfter={time_start}&EndingBefore={time_end}', auth=auth)
     if r.status_code == 200:
         data = r.json()
         for host in data['result']['data']:
-            print(host['hosts'][0]['hostId'])
+            no.append(host['hosts'][0]['hostId'])
+    return no
 
 def get_booking(user_id :int):
     r = requests.get(f'http://{server}/api/v2.0/reservations?UserId={user_id}', auth=auth)

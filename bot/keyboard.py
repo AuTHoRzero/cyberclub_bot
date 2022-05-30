@@ -1,3 +1,4 @@
+from tracemalloc import stop
 from aiogram.types import ReplyKeyboardRemove, \
     ReplyKeyboardMarkup, KeyboardButton, \
     InlineKeyboardMarkup, InlineKeyboardButton
@@ -38,6 +39,7 @@ def gen_hour_keyboard():
     markup.row()
     for time in range (0, 24, 1):
         markup.insert(InlineKeyboardButton(f'{time}:00', callback_data=time_callback.new('TIME', time)))
+    markup.add(InlineKeyboardButton('Назад ↩️', callback_data = time_callback.new('BACK', 'Skip')))
     return markup
 
 def gen_duration_keyboard():
@@ -45,6 +47,7 @@ def gen_duration_keyboard():
     markup.row()
     for duration in range (1, 25, 1):
         markup.insert(InlineKeyboardButton(duration, callback_data=duration_callback.new('DURATION', duration)))
+    markup.add(InlineKeyboardButton('Назад ↩️', callback_data = duration_callback.new('BACK', 'Skip')))
     return markup
 
 def gen_hosts_keyboard():
@@ -53,11 +56,23 @@ def gen_hosts_keyboard():
     count = get_hosts()
     for hosts in count['result']['data']:
         markup.insert(InlineKeyboardButton(hosts['id'], callback_data=host_callback.new('HOST', hosts['id'])))
+    markup.add(InlineKeyboardButton('Назад ↩️', callback_data = host_callback.new('BACK', 'Skip')))
     return markup
 
-def gen_free_hosts_keyboard(date):
-    host = get_hosts()
-    free_time = check_booking(date)
+def gen_free_hosts_keyboard(date, time_start, duration):
+    markup = InlineKeyboardMarkup(row_width=4)
+    markup.row()
+    hosts = get_hosts()
+    free_time = check_booking(date, time_start, duration)
+    for host in hosts['result']['data']:
+#        for ban in free_time:
+        if host['id'] in free_time:
+            pass
+#            print(host['id'], free_time)
+        else:
+            markup.insert(InlineKeyboardButton(host['id'], callback_data=host_callback.new('HOST', host['id'])))
+    return markup
+
 
 
 def gen_delete_booking_keyboard(bookings):

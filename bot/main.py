@@ -59,11 +59,11 @@ db_table = os.getenv('db_table')
 ##################
 ##Logging config##
 ##################
-Log_Format = "%(levelname)s %(asctime)s - %(message)s"
-
-logging.basicConfig(filename = "../volume/bot.log",
-                    format = Log_Format,
-                    level = logging.INFO)
+#Log_Format = "%(levelname)s %(asctime)s - %(message)s"
+#
+#logging.basicConfig(filename = "../volume/bot.log",
+#                    format = Log_Format,
+#                    level = logging.INFO)
 logger = logging.getLogger()
 
 #######
@@ -242,33 +242,42 @@ async def process_simple_calendar(callback_query: types.CallbackQuery, callback_
         
 @dp.callback_query_handler(time_callback.filter())
 async def time_call(callback_query: types.CallbackQuery, callback_data: dict):
-    await memory_storage(user_id=callback_query.from_user.id, time=int(callback_data['time']))
     await bot.delete_message (callback_query.from_user.id, callback_query.message.message_id)
-    await bot.send_message (callback_query.from_user.id, 'Продолжительность', reply_markup = keyboard.gen_duration_keyboard())
+    if callback_data['name'] == 'BACK':
+        await bot.send_message (callback_query.from_user.id, 'Выберите дату', reply_markup=await SimpleCalendar().start_calendar())
+    else:
+        await memory_storage(user_id=callback_query.from_user.id, time=int(callback_data['time']))
+        await bot.send_message (callback_query.from_user.id, 'Продолжительность', reply_markup = keyboard.gen_duration_keyboard())
 
 
 @dp.callback_query_handler(duration_callback.filter())
 async def duration_call(callback_query: types.CallbackQuery, callback_data: dict):
     await bot.delete_message (callback_query.from_user.id, callback_query.message.message_id)
-    await memory_storage(user_id=callback_query.from_user.id, duration=callback_data['duration'])
-    data = await return_data(callback_query.from_user.id)
-    for_input = data[0]
-    keyboard.gen_free_hosts_keyboard(for_input)
-#    print(for_input.strftime('%Y-%m-%d'))
-    await bot.send_message(callback_query.from_user.id, 'Номер ПК', reply_markup=keyboard.gen_hosts_keyboard())
+    if callback_data['name'] == 'BACK':
+        await bot.send_message(callback_query.from_user.id, 'Время', reply_markup = keyboard.gen_hour_keyboard())
+    else:
+        await memory_storage(user_id=callback_query.from_user.id, duration=callback_data['duration'])
+        data = await return_data(callback_query.from_user.id)
+        for_input = data[0]
+        keyboard.gen_hosts_keyboard()
+        print(for_input, data[3], data[1])
+        await bot.send_message(callback_query.from_user.id, 'Номер ПК', reply_markup=keyboard.gen_free_hosts_keyboard(for_input, data[3], data[1]))
 
 
 @dp.callback_query_handler(host_callback.filter())
 async def duration_call(callback_query: types.CallbackQuery, callback_data: dict):
     await bot.delete_message (callback_query.from_user.id, callback_query.message.message_id)
-    await memory_storage(user_id=callback_query.from_user.id, host=callback_data['host_id'])
-    gizmo_id = cursor.execute("SELECT gizmo_user_id FROM "+table_name+" WHERE us_id='"+str(callback_query.from_user.id)+"'").fetchone()
-    gizmo_id = str(gizmo_id).replace("'", "").replace("(","").replace(")","").replace(",","")
-    data = await return_data(callback_query.from_user.id)
-    date = data[0].isoformat()
-    date = f'{date}Z'
-    resp = booking(user_id = gizmo_id, date = date, duration = data[1], host_id = data[2])
-    await bot.send_message(callback_query.from_user.id, f'{resp}\nДобавить пк на это время?', reply_markup=keyboard.host_add)
+    if callback_data['name'] == 'BACK':
+        await bot.send_message (callback_query.from_user.id, 'Продолжительность', reply_markup = keyboard.gen_duration_keyboard())
+    else:
+        await memory_storage(user_id=callback_query.from_user.id, host=callback_data['host_id'])
+        gizmo_id = cursor.execute("SELECT gizmo_user_id FROM "+table_name+" WHERE us_id='"+str(callback_query.from_user.id)+"'").fetchone()
+        gizmo_id = str(gizmo_id).replace("'", "").replace("(","").replace(")","").replace(",","")
+        data = await return_data(callback_query.from_user.id)
+        date = data[0].isoformat()
+        date = f'{date}Z'
+        resp = booking(user_id = gizmo_id, date = date, duration = data[1], host_id = data[2])
+        await bot.send_message(callback_query.from_user.id, f'{resp}\nДобавить пк на это время?', reply_markup=keyboard.host_add)
 
 @dp.callback_query_handler(add_host_callback.filter())
 async def process_simple_calendar(callback_query: types.CallbackQuery, callback_data: dict):
@@ -283,7 +292,11 @@ async def process_simple_calendar(callback_query: types.CallbackQuery, callback_
 @dp.message_handler(text=['Бронирование'])
 async def booking_start(message: types.Message):
     await message.answer ('Выберите дату', reply_markup=await SimpleCalendar().start_calendar())
-
+    try:
+        await delete_data(message.from_user.id)
+    except:
+        pass
+    
 @dp.message_handler(text=['Мои бронирования'])
 async def get_booking_main(message: types.Message):
     gizmo_id = cursor.execute("SELECT gizmo_user_id FROM "+table_name+" WHERE us_id='"+str(message.from_user.id)+"'").fetchone()
